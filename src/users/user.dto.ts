@@ -5,7 +5,7 @@ class CreateUserDto {
     public name: string;
 
     @IsString()
-    public email: string;
+    public login: string;
 
     @IsString()
     public password: string;

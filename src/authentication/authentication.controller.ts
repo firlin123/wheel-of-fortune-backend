@@ -30,9 +30,9 @@ class AuthenticationController implements Controller {
     private registration = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
         const userData: CreateUserDto = request.body;
         if (
-            await this.user.findOne({ email: userData.email })
+            await this.user.findOne({ login: userData.login })
         ) {
-            next(new UserWithThatEmailAlreadyExistsException(userData.email));
+            next(new UserWithThatEmailAlreadyExistsException(userData.login));
         } else {
             const hashedPassword = await bcrypt.hash(userData.password, 10);
             const user = await this.user.create({
@@ -49,7 +49,7 @@ class AuthenticationController implements Controller {
 
     private loggingIn = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
         const logInData: LogInDto = request.body;
-        const user = await this.user.findOne({ email: logInData.email });
+        const user = await this.user.findOne({ login: logInData.login });
         if (user) {
             const isPasswordMatching = await bcrypt.compare(logInData.password, user.password);
             if (isPasswordMatching) {
