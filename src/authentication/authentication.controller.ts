@@ -37,6 +37,7 @@ class AuthenticationController implements Controller {
             const hashedPassword = await bcrypt.hash(userData.password, 10);
             const user = await this.user.create({
                 ...userData,
+                rolled: -1,
                 password: hashedPassword,
             });
             user.password = undefined;

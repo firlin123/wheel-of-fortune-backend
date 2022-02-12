@@ -3,6 +3,7 @@ interface User {
     name: string;
     email: string;
     password: string;
+    rolled: number;
 }
 
 export default User;

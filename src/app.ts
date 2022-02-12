@@ -1,13 +1,12 @@
 import * as bodyParser from 'body-parser';
 import * as cookieParser from 'cookie-parser';
 import * as express from 'express';
-import * as http from 'http'
+import * as http from 'http';
 import * as mongoose from 'mongoose';
 import * as path from 'path';
 import * as ws from 'ws';
 import Controller from './interfaces/controller.interface';
 import errorMiddleware from './middleware/error.middleware';
-import { IncomingMessage } from 'connect';
 
 class App {
     public app: express.Application;
@@ -40,23 +39,25 @@ class App {
         } = process.env;
         const wsServer: ws.Server = new ws.Server({ server: this.server });
 
-        wsServer.on('connection', (client: ws, req: IncomingMessage) => {
-            console.log('[Proxy] WebSocket: ' + req.url);
-            let server: ws = new ws.WebSocket(`ws://${DEV_PROXY_HOST}:${DEV_PROXY_PORT}${req.url}`, {
-                headers: {
-                    'origin': `http://${DEV_PROXY_HOST}:${DEV_PROXY_PORT}`
-                }
-            });
-            client.on('message', (data, isBinary) => {
-                try {
-                    server.send(isBinary ? data : new TextDecoder().decode(data as ArrayBuffer));
-                } catch (e) { }
-            });
-            server.on('message', (data, isBinary) => {
-                try {
-                    client.send(isBinary ? data : new TextDecoder().decode(data as ArrayBuffer));
-                } catch (e) { }
-            });
+        wsServer.on('connection', (client, req) => {
+            try {
+                console.log('[Proxy] WebSocket: ' + req.url);
+                let server = new ws.WebSocket(`ws://${DEV_PROXY_HOST}:${DEV_PROXY_PORT}${req.url}`, {
+                    headers: {
+                        'origin': `http://${DEV_PROXY_HOST}:${DEV_PROXY_PORT}`
+                    }
+                });
+                client.on('message', (data, isBinary) => {
+                    try {
+                        server.send(isBinary ? data : new TextDecoder().decode(data as ArrayBuffer));
+                    } catch (e) { }
+                });
+                server.on('message', (data, isBinary) => {
+                    try {
+                        client.send(isBinary ? data : new TextDecoder().decode(data as ArrayBuffer));
+                    } catch (e) { }
+                });
+            } catch (ex) { }
         });
     }
 
@@ -68,19 +69,24 @@ class App {
 
         this.proxyWebSockets = true;
         this.app.get('*', (clientReq, clientRes) => {
-            console.log('[Proxy] File: ' + clientReq.url);
-            var options: http.RequestOptions = {
-                hostname: DEV_PROXY_HOST,
-                port: DEV_PROXY_PORT,
-                path: clientReq.url,
-                method: clientReq.method,
-                headers: clientReq.headers
-            };
-            var proxy: http.ClientRequest = http.request(options, (res: http.IncomingMessage) => {
-                clientRes.writeHead(res.statusCode, res.headers)
-                res.pipe(clientRes, { end: true });
-            });
-            clientReq.pipe(proxy, { end: true });
+            try {
+                console.log('[Proxy] File: ' + clientReq.url);
+                clientReq.pipe(
+                    http.request({
+                        hostname: DEV_PROXY_HOST,
+                        port: DEV_PROXY_PORT,
+                        path: clientReq.url,
+                        method: clientReq.method,
+                        headers: clientReq.headers
+                    }, (res) => {
+                        try {
+                            clientRes.writeHead(res.statusCode, res.headers)
+                            res.pipe(clientRes, { end: true });
+                        } catch (ex) { }
+                    }),
+                    { end: true }
+                );
+            } catch (ex) { }
         });
     }
 
