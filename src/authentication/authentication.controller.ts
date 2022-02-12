@@ -24,7 +24,7 @@ class AuthenticationController implements Controller {
     private initializeRoutes() {
         this.router.post(`${this.path}/register`, validationMiddleware(CreateUserDto), this.registration);
         this.router.post(`${this.path}/login`, validationMiddleware(LogInDto), this.loggingIn);
-        this.router.post(`${this.path}/logout`, this.loggingOut);
+        this.router.get(`${this.path}/logout`, this.loggingOut);
     }
 
     private registration = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
