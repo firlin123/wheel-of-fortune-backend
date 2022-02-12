@@ -3,6 +3,7 @@ import * as cookieParser from 'cookie-parser';
 import * as express from 'express';
 import * as http from 'http'
 import * as mongoose from 'mongoose';
+import * as path from 'path';
 import * as ws from 'ws';
 import Controller from './interfaces/controller.interface';
 import errorMiddleware from './middleware/error.middleware';
@@ -38,7 +39,7 @@ class App {
             DEV_PROXY_PORT
         } = process.env;
         const wsServer: ws.Server = new ws.Server({ server: this.server });
-        
+
         wsServer.on('connection', (client: ws, req: IncomingMessage) => {
             console.log('[Proxy] WebSocket: ' + req.url);
             let server: ws = new ws.WebSocket(`ws://${DEV_PROXY_HOST}:${DEV_PROXY_PORT}${req.url}`, {
@@ -87,7 +88,10 @@ class App {
         if (process.env.NODE_ENV === 'development') {
             this.setupFilesProxy();
         } else {
-            this.app.get('*', express.static('static'));
+            this.app.use(express.static(path.resolve('static')));
+            this.app.get('*', (request, response) => {
+                response.sendFile(path.resolve('static', 'index.html'));
+            });
         }
     }
 
