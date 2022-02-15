@@ -20,7 +20,7 @@ class RollController implements Controller {
 
     private getRoll = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
         if (request.user.rolled === -1) {
-            let rolled: number = Math.floor(Math.random() * 10);
+            let rolled: number = Math.floor(Math.random() * 8);
             await this.user.findByIdAndUpdate(request.user._id, { rolled });
             response.send({ rolled });
         } else {
